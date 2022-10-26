@@ -90,6 +90,7 @@ rcodes = {
 
 
 function format_response(code, message)
+	emu.frameadvance()
 	-- Format response code and message into a valid response
 	return tostring(code) .. '_' .. tostring(message)
 end
@@ -500,5 +501,5 @@ while true do
 	end
 	
 	-- Advance the game by a frame
-	emu.frameadvance()
+	-- emu.frameadvance()
 end
