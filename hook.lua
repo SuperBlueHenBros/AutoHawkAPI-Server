@@ -88,50 +88,64 @@ rcodes = {
 	ERROR   = 4;  -- Generic error
 }
 
-
-function format_response(code, message)
-	emu.frameadvance()
-
-	-- Format response code and message into a valid response
-	return tostring(code) .. '_' .. tostring(message)
+function mysplit (inputstr, sep)
+	if sep == nil then
+			sep = "%s"
+	end
+	local t={}
+	for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+			table.insert(t, str)
+	end
+	return t
 end
 
-function bullshit()
-	console.log("test test test")
+function format_response(code, message)
+	-- -- console.log(" ")
+	-- -- console.log("format_response")
+	emu.frameadvance()
+	-- console.log("code:", code, "message:", message)
+	-- Format response code and message into a valid response
+	return tostring(code) .. '_' .. tostring(message)
 end
 
 local function handleRequest(data)
 	-- Handle incoming requests for reading from
 	-- and writing to memory with the BizHawk emulator
 
-	
+	-- console.log(" ")
+	-- console.log("handleRequest:")
+	-- -- console.log(data)
 
-	domain, address, type, signage, size, endianness, value
-        = data:match('^([%w%s]*)%/(%d+)%/([bif])([us])([1234])([lb])%/(-?%d*%.?%d*)$')
+	split_data = mysplit(data, '/')
+	-- console.log("split_data:")
+	-- console.log(split_data)
+
+	query_type = tonumber(split_data[1])
+	domain = split_data[2]
+	address = tonumber(split_data[3])
 	
 	-- Use default domain if none is provided
 	if domain == "" then
 		domain = nil
 	end
-		
-	-- Convert address to integer
-	address = tonumber(address)
 
+	-- console.log("query_type:", query_type)
+	-- console.log("domain:", domain)
+	-- console.log("address:", address)
 
 	-- [ INPUT ]
-	if domain == "" then
-
+	if query_type == 0 then
+		-- console.log("input")
 	else
+		-- console.log("read bytes")
 		-- [ READ ]
-		if value == "" then
+		if query_type == 1 then
 
 			-- [ BYTE ]
-			if type == 'b' then
-				return format_response(
-					rcodes.BYTE,
-					memory.readbyte(address, domain)
-				)
-			end
+			return format_response(
+				rcodes.BYTE,
+				memory.readbyte(address, domain)
+			)
 		end
 	end
 
@@ -146,11 +160,15 @@ local function clientHandler(client)
 	-- and processes the data with handleRequest
 
 	local data = ""
+	-- -- console.log(" ")
+	-- -- console.log("handing client")
 
 	while true do
 		-- Read 1 byte at a time
 		chunk, errmsg = client:receive(1)
-		
+
+		emu.frameadvance()
+
 		-- Quit reading if an error has occured
 		-- or no data was received
 		if not chunk then
@@ -174,6 +192,8 @@ local function clientHandler(client)
 	-- and formulate a response
 	response = handleRequest(data)
 
+	-- console.log("response", tostring(response))
+
 	if not response then return end
 
 	-- Make sure response is string
@@ -181,9 +201,11 @@ local function clientHandler(client)
 	client:send(tostring(response))
 end
 
+console.log("Adding server")
 
 copas.addserver(server, clientHandler)
 
+console.log("Displaying socket info")
 
 -- Open up socket with a clear sign
 while emu.framecount() < 600 do
@@ -191,6 +213,7 @@ while emu.framecount() < 600 do
 	emu.frameadvance()
 end
 
+console.log("Done starting socket")
 
 while true do
 	-- Communicate with client
@@ -200,5 +223,5 @@ while true do
 	end
 	
 	-- Advance the game by a frame
-	-- emu.frameadvance()
+	emu.frameadvance()
 end
