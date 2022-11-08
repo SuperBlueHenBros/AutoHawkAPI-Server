@@ -88,33 +88,20 @@ rcodes = {
 	ERROR   = 4;  -- Generic error
 }
 
-function mysplit (inputstr, sep)
-	if sep == nil then
-			sep = "%s"
-	end
-	local t={}
-	for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-			table.insert(t, str)
-	end
-	return t
-end
 
 function format_response(code, message)
-	-- 	-- 	emu.frameadvance()
-		-- Format response code and message into a valid response
+	-- emu.frameadvance()
+	-- Format response code and message into a valid response
 	return tostring(code) .. '_' .. tostring(message)
 end
 
 local function handleRequest(data)
 	-- Handle incoming requests for reading from
 	-- and writing to memory with the BizHawk emulator
-
-			-- 
-	split_data = mysplit(data, '/')
+	query_type, domain, address = string.match(data, "(%d)%/(.+)%/(.+)%/")
 		
-	query_type = tonumber(split_data[1])
-	domain = split_data[2]
-	address = tonumber(split_data[3])
+	query_type = tonumber(query_type)
+	address = tonumber(address)
 	
 	-- Use default domain if none is provided
 	if domain == "" then
