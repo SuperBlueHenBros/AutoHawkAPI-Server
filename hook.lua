@@ -90,7 +90,7 @@ rcodes = {
 
 
 function format_response(code, message)
-	-- emu.frameadvance()
+	emu.frameadvance()
 	-- Format response code and message into a valid response
 	return tostring(code) .. '_' .. tostring(message)
 end
@@ -98,10 +98,10 @@ end
 local function handleRequest(data)
 	-- Handle incoming requests for reading from
 	-- and writing to memory with the BizHawk emulator
-	query_type, domain, address = string.match(data, "(%d)%/(.+)%/(.+)%/")
+	query_type, domain, mem_address = string.match(data, "(%d)%/(.+)%/(.+)%/")
 		
 	query_type = tonumber(query_type)
-	address = tonumber(address)
+	mem_address = tonumber(mem_address)
 	
 	-- Use default domain if none is provided
 	if domain == "" then
@@ -112,16 +112,14 @@ local function handleRequest(data)
 	-- [ INPUT ]
 	if query_type == 0 then
 		console.log("no input function")
-	else
-				-- [ READ ]
-		if query_type == 1 then
-
-			-- [ BYTE ]
-			return format_response(
-				rcodes.BYTE,
-				memory.readbyte(address, domain)
-			)
-		end
+	end
+	-- [ READ ]
+	if query_type == 1 then
+		-- [ BYTE ]
+		return format_response(
+			rcodes.BYTE,
+			memory.readbyte(mem_address, domain)
+		)
 	end
 
 
@@ -178,6 +176,9 @@ while emu.framecount() < 120 do
 	emu.frameadvance()
 end
 
+-- I spent days trying to track down the origin of a mysterious error in copas
+-- I've given up and just overriden its error handler as it kills performance
+copas.setErrorHandler("", "")
 
 while true do
 	-- Communicate with client
@@ -190,5 +191,5 @@ while true do
 	end
 	
 	-- Advance the game by a frame
-	emu.yield()
+	-- emu.yield()
 end
