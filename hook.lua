@@ -183,9 +183,7 @@ copas.setErrorHandler("", "")
 while true do
 	-- Communicate with client
 	local handled, errmsg = copas.step(0)
-	-- if errmsg then
-	-- 	console.log("errmsg", errmsg)
-	-- end
+
 	if handled == nil then
 		print(('Socket error: %s'):format(errmsg))
 	end
