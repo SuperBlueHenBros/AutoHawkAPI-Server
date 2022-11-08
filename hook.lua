@@ -153,8 +153,6 @@ local function clientHandler(client)
 		-- Read 1 byte at a time
 		chunk, errmsg = client:receive(1)
 
-		emu.frameadvance()
-
 		-- Quit reading if an error has occured
 		-- or no data was received
 		if not chunk then
