@@ -201,27 +201,30 @@ local function clientHandler(client)
 	client:send(tostring(response))
 end
 
-console.log("Adding server")
+-- console.log("Adding server")
 
 copas.addserver(server, clientHandler)
 
-console.log("Displaying socket info")
+-- console.log("Displaying socket info")
 
 -- Open up socket with a clear sign
-while emu.framecount() < 600 do
+while emu.framecount() < 120 do
 	gui.text(20, 20, '.Opening socket at ' .. address .. ':' .. port)
 	emu.frameadvance()
 end
 
-console.log("Done starting socket")
+-- console.log("Done starting socket")
 
 while true do
 	-- Communicate with client
 	local handled, errmsg = copas.step(0)
+	-- if errmsg then
+	-- 	console.log("errmsg", errmsg)
+	-- end
 	if handled == nil then
 		print(('Socket error: %s'):format(errmsg))
 	end
 	
 	-- Advance the game by a frame
-	emu.frameadvance()
+	emu.yield()
 end
