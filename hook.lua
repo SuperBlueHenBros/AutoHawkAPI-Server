@@ -100,11 +100,8 @@ function mysplit (inputstr, sep)
 end
 
 function format_response(code, message)
-	-- -- console.log(" ")
-	-- -- console.log("format_response")
-	emu.frameadvance()
-	-- console.log("code:", code, "message:", message)
-	-- Format response code and message into a valid response
+	-- 	-- 	emu.frameadvance()
+		-- Format response code and message into a valid response
 	return tostring(code) .. '_' .. tostring(message)
 end
 
@@ -112,14 +109,9 @@ local function handleRequest(data)
 	-- Handle incoming requests for reading from
 	-- and writing to memory with the BizHawk emulator
 
-	-- console.log(" ")
-	-- console.log("handleRequest:")
-	-- -- console.log(data)
-
+			-- 
 	split_data = mysplit(data, '/')
-	-- console.log("split_data:")
-	-- console.log(split_data)
-
+		
 	query_type = tonumber(split_data[1])
 	domain = split_data[2]
 	address = tonumber(split_data[3])
@@ -129,16 +121,12 @@ local function handleRequest(data)
 		domain = nil
 	end
 
-	-- console.log("query_type:", query_type)
-	-- console.log("domain:", domain)
-	-- console.log("address:", address)
-
+			
 	-- [ INPUT ]
 	if query_type == 0 then
-		-- console.log("input")
+		console.log("no input function")
 	else
-		-- console.log("read bytes")
-		-- [ READ ]
+				-- [ READ ]
 		if query_type == 1 then
 
 			-- [ BYTE ]
@@ -160,9 +148,7 @@ local function clientHandler(client)
 	-- and processes the data with handleRequest
 
 	local data = ""
-	-- -- console.log(" ")
-	-- -- console.log("handing client")
-
+	-- 	-- 
 	while true do
 		-- Read 1 byte at a time
 		chunk, errmsg = client:receive(1)
@@ -192,8 +178,6 @@ local function clientHandler(client)
 	-- and formulate a response
 	response = handleRequest(data)
 
-	-- console.log("response", tostring(response))
-
 	if not response then return end
 
 	-- Make sure response is string
@@ -201,11 +185,7 @@ local function clientHandler(client)
 	client:send(tostring(response))
 end
 
--- console.log("Adding server")
-
 copas.addserver(server, clientHandler)
-
--- console.log("Displaying socket info")
 
 -- Open up socket with a clear sign
 while emu.framecount() < 120 do
@@ -213,7 +193,6 @@ while emu.framecount() < 120 do
 	emu.frameadvance()
 end
 
--- console.log("Done starting socket")
 
 while true do
 	-- Communicate with client
