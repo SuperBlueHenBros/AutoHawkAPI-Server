@@ -78,10 +78,17 @@ copas = require("copas")
 
 server = socket.bind(address, port)
 
+-- Query types
+qtype = {
+    INPUT = 0;
+    READ = 1;
+    WRITE = 2;
+    CLIENT = 3
+}
 
 -- Response codes
 rcodes = {
-	WRITTEN = 0;  -- Successfully wrote to memory
+	INPUT 	= 0;  -- Successfully wrote to memory
 	BYTE    = 1;  -- Successfully read byte
 	INTEGER = 2;  -- Successfully read integer
 	FLOAT   = 3;  -- Successfully read float
@@ -98,10 +105,20 @@ end
 local function handleRequest(data)
 	-- Handle incoming requests for reading from
 	-- and writing to memory with the BizHawk emulator
-	query_type, domain, mem_address = string.match(data, "(%d)%/(.+)%/(.+)%/")
-		
+	form = tonumber(string.match(data, "(%d)%/.+"))
+	if form == qtype["INPUT"] then
+		-- TODO: make a proper lua table 
+		query_type, button_name, button_state = string.match(data, "(%d)%/(.+)%/(.+)%/")
+		button_table = {}
+		button_table[button_name] = button_state
+		-- console.log("Sending Input:")
+		-- console.log(button_table)
+	elseif form == qtype["READ"] then
+		query_type, domain, mem_address = string.match(data, "(%d)%/(.+)%/(.+)%/")
+		mem_address = tonumber(mem_address)
+	end
+
 	query_type = tonumber(query_type)
-	mem_address = tonumber(mem_address)
 	
 	-- Use default domain if none is provided
 	if domain == "" then
@@ -110,11 +127,14 @@ local function handleRequest(data)
 
 			
 	-- [ INPUT ]
-	if query_type == 0 then
-		console.log("no input function")
+	if form == qtype["INPUT"] then
+		return format_response(
+			rcodes.INPUT,
+			joypad.set(button_table)
+	)
 	end
 	-- [ READ ]
-	if query_type == 1 then
+	if form == qtype["READ"] then
 		-- [ BYTE ]
 		return format_response(
 			rcodes.BYTE,
@@ -168,7 +188,11 @@ local function clientHandler(client)
 	client:send(tostring(response))
 end
 
+console.log("Adding server")
+
 copas.addserver(server, clientHandler)
+
+console.log("Added server")
 
 -- Open up socket with a clear sign
 while emu.framecount() < 120 do
@@ -176,9 +200,13 @@ while emu.framecount() < 120 do
 	emu.frameadvance()
 end
 
+console.log("Done showing intro")
+
 -- I spent days trying to track down the origin of a mysterious error in copas
 -- I've given up and just overriden its error handler as it kills performance
 copas.setErrorHandler("", "")
+
+console.log("Disabled COPAS error handler")
 
 while true do
 	-- Communicate with client
