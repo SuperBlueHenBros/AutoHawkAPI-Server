@@ -78,10 +78,17 @@ copas = require("copas")
 
 server = socket.bind(address, port)
 
+-- Query types
+qtype = {
+    INPUT = 0;
+    READ = 1;
+    WRITE = 2;
+    CLIENT = 3
+}
 
 -- Response codes
 rcodes = {
-	WRITTEN = 0;  -- Successfully wrote to memory
+	INPUT 	= 0;  -- Successfully wrote to memory
 	BYTE    = 1;  -- Successfully read byte
 	INTEGER = 2;  -- Successfully read integer
 	FLOAT   = 3;  -- Successfully read float
@@ -95,346 +102,44 @@ function format_response(code, message)
 	return tostring(code) .. '_' .. tostring(message)
 end
 
-
 local function handleRequest(data)
 	-- Handle incoming requests for reading from
 	-- and writing to memory with the BizHawk emulator
+	form = tonumber(string.match(data, "(%d)%/.+"))
+	if form == qtype["INPUT"] then
+		-- TODO: make a proper lua table 
+		query_type, button_name, button_state = string.match(data, "(%d)%/(.+)%/(.+)%/")
+		button_table = {}
+		button_table[button_name] = button_state
+		-- console.log("Sending Input:")
+		-- console.log(button_table)
+	elseif form == qtype["READ"] then
+		query_type, domain, mem_address = string.match(data, "(%d)%/(.+)%/(.+)%/")
+		mem_address = tonumber(mem_address)
+	end
 
-	domain, address, type, signage, size, endianness, value
-        = data:match('^([%w%s]*)%/(%d+)%/([bif])([us])([1234])([lb])%/(-?%d*%.?%d*)$')
+	query_type = tonumber(query_type)
 	
 	-- Use default domain if none is provided
 	if domain == "" then
 		domain = nil
 	end
-		
-	-- Convert address to integer
-	address = tonumber(address)
 
-	
-	-- local function format_response(code, message)
-	-- 	-- Format response code and message into a valid response
-	-- 	return tostring(code) .. '_' .. tostring(message)
-	-- end
-
-
+			
+	-- [ INPUT ]
+	if form == qtype["INPUT"] then
+		return format_response(
+			rcodes.INPUT,
+			joypad.set(button_table)
+	)
+	end
 	-- [ READ ]
-	if value == "" then
-
+	if form == qtype["READ"] then
 		-- [ BYTE ]
-		if type == 'b' then
-			return format_response(
-				rcodes.BYTE,
-				memory.readbyte(address, domain)
-			)
-		end
-
-		
-		-- [ INTEGER ]
-		if type == 'i' then
-			
-			-- [ UNSIGNED ]
-			if signage == 'u' then
-				
-				-- [ 1 BYTE ]
-				if size == '1' then
-					return format_response(
-						rcodes.INTEGER,
-						memory.read_u8(address, domain)
-					)
-				end
-
-				-- [ LITTLE ENDIAN ]
-				if endianness == 'l' then
-					
-					-- [ 2 BYTE ]
-					if size == '2' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_u16_le(address, domain)
-						)
-						
-					-- [ 3 BYTE ]
-					elseif size == '3' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_u24_le(address, domain)
-						)
-						
-					-- [ 4 BYTE ]
-					elseif size == '4' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_u32_le(address, domain)
-						)
-					end
-				end
-
-				-- [ BIG ENDIAN ]
-				if endianness == 'b' then
-
-					-- [ 2 BYTE ]
-					if size == '2' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_u16_be(address, domain)
-						)
-
-					-- [ 3 BYTE ]
-					elseif size == '3' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_u24_be(address, domain)
-						)
-
-					-- [ 4 BYTE ]
-					elseif size == '4' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_u32_be(address, domain)
-						)
-					end
-				end
-			end
-
-			-- [ SIGNED ]
-			if signage == 's' then
-				
-				-- [ 1 BYTE ]
-				if size == '1' then
-					return format_response(
-						rcodes.INTEGER,
-						memory.read_s8(address, domain)
-					)
-				end
-
-				-- [ LITTLE ENDIAN ]
-				if endianness == 'l' then
-					
-					-- [ 2 BYTE ]
-					if size == '2' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_s16_le(address, domain)
-						)
-						
-					-- [ 3 BYTE ]
-					elseif size == '3' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_s24_le(address, domain)
-						)
-						
-					-- [ 4 BYTE ]
-					elseif size == '4' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_s32_le(address, domain)
-						)
-
-					end
-				end
-
-				-- [ BIG ENDIAN ]
-				if endianness == 'b' then
-
-					-- [ 2 BYTE ]
-					if size == '2' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_s16_be(address, domain)
-						)
-
-					-- [ 3 BYTE ]
-					elseif size == '3' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_s24_be(address, domain)
-						)
-
-					-- [ 4 BYTE ]
-					elseif size == '4' then
-						return format_response(
-							rcodes.INTEGER,
-							memory.read_s32_be(address, domain)
-						)
-
-					end
-				end
-			end
-		end
-
-		-- [ FLOAT ]
-		if type == 'f' then
-
-			-- Whether the value is big endian or not
-			bigendian = endianness == 'b'
-
-			return format_response(
-				rcodes.FLOAT,
-				memory.readfloat(address, bigendian, domain)
-			)
-		end
-
-	-- [ WRITE ]
-	else
-		
-		-- Convert value to number
-		value = tonumber(value)
-
-
-		-- [ BYTE ]
-		if type == 'b' then
-			return format_response(
-				rcodes.WRITTEN,
-				memory.writebyte(address, value, domain)
-			)
-		end
-
-		
-		-- [ INTEGER ]
-		if type == 'i' then
-			
-			-- [ UNSIGNED ]
-			if signage == 'u' then
-				
-				-- [ 1 BYTE ]
-				if size == '1' then
-					return format_response(
-						rcodes.WRITTEN,
-						memory.write_u8(address, value, domain)
-					)
-				end
-
-				-- [ LITTLE ENDIAN ]
-				if endianness == 'l' then
-					
-					-- [ 2 BYTE ]
-					if size == '2' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_u16_le(address, value, domain)
-						)
-						
-					-- [ 3 BYTE ]
-					elseif size == '3' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_u24_le(address, value, domain)
-						)
-						
-					-- [ 4 BYTE ]
-					elseif size == '4' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_u32_le(address, value, domain)
-						)
-					end
-				end
-
-				-- [ BIG ENDIAN ]
-				if endianness == 'b' then
-
-					-- [ 2 BYTE ]
-					if size == '2' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_u16_be(address, value, domain)
-						)
-
-					-- [ 3 BYTE ]
-					elseif size == '3' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_u24_be(address, value, domain)
-						)
-
-					-- [ 4 BYTE ]
-					elseif size == '4' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_u32_be(address, value, domain)
-						)
-					end
-				end
-			end
-
-			-- [ SIGNED ]
-			if signage == 's' then
-				
-				-- [ 1 BYTE ]
-				if size == '1' then
-					return format_response(
-						rcodes.WRITTEN,
-						memory.write_s8(address, value, domain)
-					)
-				end
-
-				-- [ LITTLE ENDIAN ]
-				if endianness == 'l' then
-					
-					-- [ 2 BYTE ]
-					if size == '2' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_s16_le(address, value, domain)
-						)
-						
-					-- [ 3 BYTE ]
-					elseif size == '3' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_s24_le(address, value, domain)
-						)
-						
-					-- [ 4 BYTE ]
-					elseif size == '4' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_s32_le(address, value, domain)
-						)
-					end
-				end
-
-				-- [ BIG ENDIAN ]
-				if endianness == 'b' then
-
-					-- [ 2 BYTE ]
-					if size == '2' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_s16_be(address, value, domain)
-						)
-
-					-- [ 3 BYTE ]
-					elseif size == '3' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_s24_be(address, value, domain)
-						)
-
-					-- [ 4 BYTE ]
-					elseif size == '4' then
-						return format_response(
-							rcodes.WRITTEN,
-							memory.write_s32_be(address, value, domain)
-						)
-					end
-				end
-			end
-		end
-
-		-- [ FLOAT ]
-		if type == 'f' then
-			
-			-- Whether the value is big endian or not
-			bigendian = endianness == 'b'
-
-			return format_response(
-				rcodes.WRITTEN,
-				memory.writefloat(address, value, bigendian, domain)
-			)
-		end
+		return format_response(
+			rcodes.BYTE,
+			memory.readbyte(mem_address, domain)
+		)
 	end
 
 
@@ -448,11 +153,11 @@ local function clientHandler(client)
 	-- and processes the data with handleRequest
 
 	local data = ""
-
+	-- 	-- 
 	while true do
 		-- Read 1 byte at a time
 		chunk, errmsg = client:receive(1)
-		
+
 		-- Quit reading if an error has occured
 		-- or no data was received
 		if not chunk then
@@ -468,6 +173,7 @@ local function clientHandler(client)
 		data = data .. chunk
 	end
 
+	
 
 	if not data then return end
 
@@ -482,24 +188,34 @@ local function clientHandler(client)
 	client:send(tostring(response))
 end
 
+console.log("Adding server")
 
 copas.addserver(server, clientHandler)
 
+console.log("Added server")
 
 -- Open up socket with a clear sign
-while emu.framecount() < 600 do
+while emu.framecount() < 120 do
 	gui.text(20, 20, '.Opening socket at ' .. address .. ':' .. port)
 	emu.frameadvance()
 end
 
+console.log("Done showing intro")
+
+-- I spent days trying to track down the origin of a mysterious error in copas
+-- I've given up and just overriden its error handler as it kills performance
+copas.setErrorHandler("", "")
+
+console.log("Disabled COPAS error handler")
 
 while true do
 	-- Communicate with client
 	local handled, errmsg = copas.step(0)
+
 	if handled == nil then
 		print(('Socket error: %s'):format(errmsg))
 	end
 	
 	-- Advance the game by a frame
-	-- emu.frameadvance()
+	-- emu.yield()
 end
