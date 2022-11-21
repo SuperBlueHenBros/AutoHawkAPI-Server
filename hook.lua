@@ -125,6 +125,9 @@ local function handleRequest(data)
 	elseif form == qtype["CLIENT"] then
 		query_type, client_type = string.match(data, "(%d)%/(%d)%/")
 		client_type = tonumber(client_type)
+		if client_type == ctype["ADVANCE"] then
+			frames = string.match(data, "%d%/%d%/(%d)")
+		end
 	end
 
 	query_type = tonumber(query_type)
@@ -154,7 +157,11 @@ local function handleRequest(data)
 	if form == qtype["CLIENT"] then
 		-- [ FRAME ADVANCE ]
 		if client_type == ctype["ADVANCE"] then
-			emu.frameadvance()
+			repeat
+				emu.frameadvance()
+				frames = frames - 1
+			until (frame <= 0)
+
 			return format_response(
 				rcodes.CLIENT,
 				true
