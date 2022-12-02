@@ -100,6 +100,7 @@ rcodes = {
 	ERROR   = 4;  -- Generic error
 }
 
+button_table = {}
 
 function format_response(code, message)
 	-- emu.frameadvance()
@@ -115,7 +116,6 @@ local function handleRequest(data)
 	if form == qtype["INPUT"] then
 		-- TODO: make a proper lua table 
 		query_type, button_name, button_state = string.match(data, "(%d)%/(.+)%/(.+)%/")
-		button_table = {}
 		button_table[button_name] = button_state
 		-- console.log("Sending Input:")
 		-- console.log(button_table)
