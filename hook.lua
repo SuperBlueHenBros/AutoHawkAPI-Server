@@ -89,6 +89,8 @@ qtype = {
 -- Cient command types
 ctype = {
 	ADVANCE = 0;
+	SAVE = 1;
+	LOAD = 2;
 }
 
 -- Response codes
@@ -160,7 +162,22 @@ local function handleRequest(data)
 			repeat
 				emu.frameadvance()
 				frames = frames - 1
+				joypad.set(button_table)
 			until (frame <= 0)
+
+			return format_response(
+				rcodes.CLIENT,
+				true
+			)
+		elseif client_type == ctype["SAVE"] then
+			savestate.saveslot(0)
+
+			return format_response(
+				rcodes.CLIENT,
+				true
+			)
+		elseif client_type == ctype["LOAD"] then
+			savestate.loadslot(0)
 
 			return format_response(
 				rcodes.CLIENT,
