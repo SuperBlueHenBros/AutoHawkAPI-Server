@@ -83,7 +83,14 @@ qtype = {
     INPUT = 0;
     READ = 1;
     WRITE = 2;
-    CLIENT = 3
+    CLIENT = 3;
+}
+
+-- Cient command types
+ctype = {
+	ADVANCE = 0;
+	SAVE = 1;
+	LOAD = 2;
 }
 
 -- Response codes
@@ -91,14 +98,16 @@ rcodes = {
 	INPUT 	= 0;  -- Successfully wrote to memory
 	BYTE    = 1;  -- Successfully read byte
 	INTEGER = 2;  -- Successfully read integer
-	FLOAT   = 3;  -- Successfully read float
+	CLIENT  = 3;  -- Successfully controlled client
 	ERROR   = 4;  -- Generic error
 }
 
+button_table = {}
 
 function format_response(code, message)
-	emu.frameadvance()
+	-- emu.frameadvance()
 	-- Format response code and message into a valid response
+	-- console.log(code, "_", message)
 	return tostring(code) .. '_' .. tostring(message)
 end
 
@@ -109,13 +118,18 @@ local function handleRequest(data)
 	if form == qtype["INPUT"] then
 		-- TODO: make a proper lua table 
 		query_type, button_name, button_state = string.match(data, "(%d)%/(.+)%/(.+)%/")
-		button_table = {}
 		button_table[button_name] = button_state
 		-- console.log("Sending Input:")
 		-- console.log(button_table)
 	elseif form == qtype["READ"] then
 		query_type, domain, mem_address = string.match(data, "(%d)%/(.+)%/(.+)%/")
 		mem_address = tonumber(mem_address)
+	elseif form == qtype["CLIENT"] then
+		query_type, client_type = string.match(data, "(%d)%/(%d)%/")
+		client_type = tonumber(client_type)
+		if client_type == ctype["ADVANCE"] then
+			frames = string.match(data, "%d%/%d%/(%d)")
+		end
 	end
 
 	query_type = tonumber(query_type)
@@ -140,6 +154,36 @@ local function handleRequest(data)
 			rcodes.BYTE,
 			memory.readbyte(mem_address, domain)
 		)
+	end
+	-- [ CLIENT ]
+	if form == qtype["CLIENT"] then
+		-- [ FRAME ADVANCE ]
+		if client_type == ctype["ADVANCE"] then
+			repeat
+				emu.frameadvance()
+				frames = frames - 1
+				joypad.set(button_table)
+			until (frame <= 0)
+
+			return format_response(
+				rcodes.CLIENT,
+				true
+			)
+		elseif client_type == ctype["SAVE"] then
+			savestate.saveslot(0)
+
+			return format_response(
+				rcodes.CLIENT,
+				true
+			)
+		elseif client_type == ctype["LOAD"] then
+			savestate.loadslot(0)
+
+			return format_response(
+				rcodes.CLIENT,
+				true
+			)
+		end
 	end
 
 
