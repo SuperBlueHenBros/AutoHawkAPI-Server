@@ -8,10 +8,18 @@ hook.lua is a based on OpenDisrupt's Bizhook library but is not compatible with 
 
 ## Usage
 
-### Manual
+### Manual Server Start-Up
 
-Open and run with Bizhawk's Lua console
+#### Opening socket
 
-### Automatic
+In Bizhawk, go to `Tools` > `Lua Console`. Select `Open script` and open `hook.lua` from the exported components.
+
+##### Is it working?
+
+If it starts successfully, you should see output in Bizhawk's Lua console stating it is running.
+
+**Note**: Do not try to communicate with the socket *before* the text has disappeared, as it isn't actually opened yet. The message is there to make it clear that the script is running successfully.
+
+### Automatic Server Start-Up
 
 Automatically launched with Bizhawk via [AutoHawk](https://github.com/SuperBlueHenBros/middle-tier) once configured.
